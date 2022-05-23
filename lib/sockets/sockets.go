@@ -15,9 +15,15 @@ var wsupgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func BroadcastMessage(msg string) {
+func BroadcastMessage(msg WebSocketPacket) {
+
+	packed, err := json.Marshal(msg)
+	if err != nil {
+		fmt.Println("Critial Error:", err)
+	}
+
 	for _, element := range SocketCache {
-		element.SendMessage(websocket.TextMessage, msg)
+		element.SendMessage(websocket.TextMessage, string(packed))
 	}
 }
 

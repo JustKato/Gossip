@@ -16,7 +16,7 @@ class WebSocketPacket {
         this.content  = content
     }
 
-    toJson() {
+    toJson = () => {
         return {
             senderID: this.senderID,
             event:    this.event,
@@ -28,9 +28,8 @@ class WebSocketPacket {
 
 class WebSocketContainer {
 
-    self;
-
-    id = "";
+    self = null;
+    id   = null;
 
     constructor(webSocketURL) {
         // set senderID
@@ -53,7 +52,15 @@ class WebSocketContainer {
     }
 
     onMessage = (msg) => {
-        console.log(`Received Message:`, msg.data)
+
+        // Parse the message
+        let parsed = JSON.parse(msg.data);
+
+        // Check what kind of event this is
+        if ( parsed['event'] == 'update_database' ) {
+            this.onDatabaseUpdate(parsed['content']);
+        }
+
     }
 
     // Send a message
@@ -64,13 +71,106 @@ class WebSocketContainer {
         }
 
         // Build the send contents
-        const sendContents = new WebSocketPacket(this.id, event, msg);
+        const sendContents = new WebSocketPacket(this.id, event, msg).toJson();
 
         // Send to server
         return this.self.send(JSON.stringify(sendContents));
     }
 
+    onDatabaseUpdate = data => {
+
+        // Go through all channels
+        for ( let [channelName, d] of Object.entries(data) ) {
+
+            // Check if the channel exists
+            let myChannel = document.querySelector(`*[channel-id="${channelName}"]`);
+            if ( !myChannel ) {
+                myChannel = this.createChannel(channelName, d);
+            }
+
+            this.updateChannel(myChannel, d)
+        }
+
+    }
+
+    /**
+     * 
+     * @param {HTMLElement} myChannel 
+     * @param {Array} cdata 
+     */
+    updateChannel = (myChannel, cdata) => {
+        // Update the message indicator
+        myChannel.querySelector(`.gossip-indicator`).textContent = cdata.length;
+
+        this.updateChannelMessages(myChannel, cdata);
+    }
+
+    updateChannelMessages = (myChannel, cdata) => {
+        // Check if my channel is actually selected
+        if ( myChannel.classList.contains(`selected`) ) {
+            // Get the main container
+            const msgContainer = document.getElementById(`gossip-messages`);
+            // Clean old logs
+            msgContainer.querySelectorAll(`div`).forEach( e => {
+                e.remove();
+            })
+
+            // Create the new messages
+            for ( let i of cdata ) {
+                const row = document.createElement(`div`);
+                // Append the message
+                msgContainer.prepend(row);
+
+                row.classList.add(`gossip-message`);
+                row.innerHTML = `<span class="ts">${i['timestamp']}</span><span class="msg">${i['content']}</span>`;
+            }
+
+        }
+    }
+
+    createChannel = (cname, cdata) => {
+
+        const templateMessage = document.getElementById(`template-message`);
+
+        if ( !!!templateMessage ) {
+            throw new Error(`Could not find the template message`);
+        }
+
+        /**
+         * @type {HTMLElement}
+         */
+        const myChannel = templateMessage.cloneNode(true);
+        // Remove ID
+        myChannel.removeAttribute(`id`);
+        // Change name
+        myChannel.querySelector(`.channel-name`).textContent = cname;
+        // Set the message indicator
+        myChannel.querySelector(`.gossip-indicator`).textContent = cdata.length;
+        // Set the id of the channel
+        myChannel.setAttribute(`channel-id`, cname);
+
+        myChannel.addEventListener(`click`, e => {
+            document.querySelectorAll(`.gossip-room-select.selected`).forEach( e => {
+                e.classList.remove(`selected`);
+            })
+
+            myChannel.classList.add(`selected`);
+
+            this.updateChannelMessages(myChannel, cdata);
+        })
+
+
+        // Append the element
+        templateMessage.parentElement.appendChild(myChannel);
+
+        return myChannel;
+    }
+
 }
+
+
+
+
 
 
 /**

@@ -1,50 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
+{{ template "inc/header.html" .}}
+{{ template "inc/theme-toggle.html" .}}
 
 <body>
-    <h3>WebSocket Go</h3>
-    <pre id="output"></pre>
 
-    <script>
-        document.addEventListener(`DOMContentLoaded`, e => {
-            main(document.getElementById(`output`));
-        })
+    <main class="container rounded shadow-sm mt-5 p-0" id="main-card">
 
-        function main(myOutput) {
+        <a href="/" class="logo-container w-100 d-flex my-3">
+            <img src="/static/img/Logologo.svg" alt="Logo" style="max-width: 50%; margin: 0 auto;" class="mx-auto">
+        </a>
 
-            window.mySocket = new WebSocketContainer('ws://localhost:8080/ws')
+        <div class="col-12 border-top row m-0" id="gossip-rooms-container">
+            <div class="col-4 h-100 border-end p-0">
+                <div class="text-center border-bottom p-2">
+                    <h4 class="text-muted">Available Channels</h4>
+                </div>
+                <div id="available-channels">
+                    <div class="gossip-room-select position-relative border-bottom" id="template-message">
+                        <span class="gossip-indicator badge bg-secondary">0</span>
+                        <span class="channel-name">Unite Testing 1</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-8 h-100 p-0">
+                <div class="text-center border-bottom p-2">
+                    <h4 class="text-muted">Messages Log</h4>
+                </div>
+                <div id="gossip-messages"></div>
+            </div>
+        </div>
 
-            return;
+        <script>
+            document.addEventListener(`DOMContentLoaded`, e => {
+                window.mySocket = new WebSocketContainer('ws://localhost:8080/ws')
+            })
+        </script>
 
-            ws.onmessage = function (msg) {
-                myOutput.textContent += (new Date()) + " <== " + msg.data + "\n";
-                console.log(msg)
-            }
+    </main>
 
-            ws.onopen = function () {
-                setInterval( function () {
-                    send("ping") 
-                }, 1000)
-            }
-
-            function send(data) {
-                myOutput.textContent += (new Date()) + " ==> " + data + "\n";
-                ws.send(data)
-            }
-
-        }
-
-    </script>
-
+    
 </body>
 
-<script src="/static/js/main.js"></script>
-
-</html>
+{{ template "inc/footer.html" .}}
