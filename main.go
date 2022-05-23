@@ -24,14 +24,12 @@ func main() {
 		sockets.WebsocketHandler(c.Writer, c.Request)
 	})
 
-	go TestTask()
-
 	r.Run("localhost:8080")
 }
 
 func TestTask() {
 
-	ticker := time.NewTicker(1 * time.Millisecond)
+	ticker := time.NewTicker(1 * time.Second)
 
 	for range ticker.C {
 		sockets.BroadcastMessage(fmt.Sprintf("Current Time: %s", time.Now().Local().String()))

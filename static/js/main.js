@@ -33,6 +33,8 @@ class WebSocketContainer {
     id = "";
 
     constructor(webSocketURL) {
+        // set senderID
+        this.id = generateGuid();
         // Spawn self
         this.self = new WebSocket(webSocketURL);
         this.self.onclose = this.onClose;
@@ -42,9 +44,7 @@ class WebSocketContainer {
 
     onConnected = () => {
         console.log(`Web Socket connection established`);
-        this.sendMessage(new WebSocketPacket(this.id, `connected`, {
-            test: [ 1, 2, 3 ]
-        }));
+        this.sendMessage(`connected`, null);
         // Send self information to the database
     }
 
@@ -57,16 +57,32 @@ class WebSocketContainer {
     }
 
     // Send a message
-    sendMessage = (sendContents) => {
+    sendMessage = (event, msg) => {
 
-        if ( typeof sendContents == 'object' ) {
-            if ( sendContents.constructor == WebSocketPacket ) {
-                // Send to server
-                return this.self.send(JSON.stringify(sendContents));
-            }
+        if ( typeof event != 'string' ) {
+            throw new Error(`Invalid parameter, please only provide strings events`);
         }
 
-        throw new Error(`Invalid sendContents type, must be of type WebSocketPacket`);
+        // Build the send contents
+        const sendContents = new WebSocketPacket(this.id, event, msg);
+
+        // Send to server
+        return this.self.send(JSON.stringify(sendContents));
     }
 
+}
+
+
+/**
+ * Generate a GUID
+ */
+ function generateGuid() {
+    let result = '';
+    for (let j = 0; j < 32; j++) {
+        if (j == 8 || j == 12 || j == 16 || j == 20)
+            result = result + '-';
+        i = Math.floor(Math.random() * 16).toString(16).toUpperCase();
+        result = result + i;
+    }
+    return result;
 }

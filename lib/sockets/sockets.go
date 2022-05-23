@@ -1,6 +1,7 @@
 package sockets
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -56,6 +57,12 @@ func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type WebSocketPacket struct {
+	SenderID string      `json:"senderID"`
+	Event    string      `json:"event"`
+	Content  interface{} `json:"content"`
+}
+
 type WebSocketConnection struct {
 	Socket *websocket.Conn
 }
@@ -71,13 +78,27 @@ func (w *WebSocketConnection) OnDisconnect() {
 
 }
 
-func (w *WebSocketConnection) OnMessage(messageType int, msg []byte) {
+func (w *WebSocketConnection) OnMessage(messageType int, msg []byte) error {
 
-	// Parse the received data as a string
-	finalMessage := string(msg)
+	// Initialize the packet
+	var m WebSocketPacket
 
-	fmt.Println(finalMessage)
+	fmt.Println("Got:", string(msg))
 
+	// Parse the message as a struct
+	err := json.Unmarshal(msg, &m)
+	// Check if there has been an error
+	if err != nil {
+		fmt.Println(fmt.Errorf("error: %s", err))
+		// Just return it lmao
+		return err
+	}
+
+	// Print for now
+	fmt.Printf("[%v][%v]: %v\n", m.SenderID, m.Event, m.Content)
+
+	// Yay!
+	return nil
 }
 
 func (w *WebSocketConnection) SendMessage(messageType int, msg string) {
